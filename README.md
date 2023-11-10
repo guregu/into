@@ -1,11 +1,18 @@
-# into
+# into [![GoDoc](https://godoc.org/github.com/guregu/into?status.svg)](https://godoc.org/github.com/guregu/into)
 
 **into** provides convenience functions for coercing dynamic values to concrete values.
 
 Inlcudes:
 - `into.String`, `into.Int`, `into.Uint`, `into.Float` for coercing `any` to their respective types
 - `into.CanString`, `into.CanInt`, `into.CanUint`, `into.CanFloat` for testing coercibility
-- `into.Try` for catching panics and coercing them to `error`
+- `into.Try` and `into.Maybe` for catching panics and coercing them to `error`
+
+### Motivation
+
+This library is an experiment that might be useful if you have to deal with `map[string]any`, writing data mapper libraries, etc.
+It's not intended to replace `strconv`; if you know your concrete types ahead of time just use the standard library.
+
+The panicking nature of the API is an idea borrowed from everyone's favorite, the standard library `reflect` package.
 
 ## Example
 
@@ -21,6 +28,7 @@ ok := into.CanInt("blah") // false
 err := into.Try(func() {
     a = into.Int("blah")
 }) // into.ErrInvalid{Value: "blah", Type: "int"}
+n, err := into.Maybe(into.Int, "blah") // 0, into.ErrInvalid{Value: "blah", Type: "int"}
 ```
 
 ## Performance
