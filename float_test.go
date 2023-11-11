@@ -9,7 +9,7 @@ import (
 	"github.com/guregu/into"
 )
 
-type myfloat float64
+type myFloat float64
 
 func TestFloat(t *testing.T) {
 	t.Parallel()
@@ -46,22 +46,22 @@ func TestFloat(t *testing.T) {
 		},
 		{
 			name:  "subtype",
-			input: myfloat(42.5),
+			input: myFloat(42.5),
 			want:  42.5,
 		},
 		{
 			name:  "subtype pointer",
-			input: into.Ptr(myfloat(42.5)),
+			input: into.Ptr(myFloat(42.5)),
 			want:  42.5,
 		},
 		{
 			name:  "nil subtype pointer",
-			input: (*myfloat)(nil),
+			input: (*myFloat)(nil),
 			want:  0,
 		},
 		{
 			name:  "subtype without reflection",
-			input: myfloat(42.5),
+			input: myFloat(42.5),
 			want:  0,
 			opts:  []into.Option{into.WithoutReflection()},
 			err:   into.ErrInvalid{Value: 42.5, Type: "int"},
@@ -126,39 +126,12 @@ func TestCanFloat(t *testing.T) {
 	good := []any{
 		float64(42.5),
 		float32(42.5),
-		myfloat(42.5),
+		myFloat(42.5),
 		new(float64),
 		new(float32),
-		new(myfloat),
+		new(myFloat),
 		nil,
 	}
-
-	bad := []any{
-		int(1),
-		uint(1),
-		complex(1, 1),
-		struct{}{},
-	}
-
-	strings := []any{
-		"42.5",
-		"",
-		new(string),
-		myString("42.5"),
-		new(myString),
-		[]byte("42.5"),
-		myBytes("42.5"),
-		my42Marshaler{},
-		my42Marshaler{err: myError}, // ignored by default
-	}
-
-	badStrings := []any{
-		[]int{1},
-		"foo",
-		my42Marshaler{err: myError},
-		myMarshaler{},
-	}
-
 	for _, v := range good {
 		v := v
 		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
@@ -168,6 +141,13 @@ func TestCanFloat(t *testing.T) {
 		})
 	}
 
+	bad := []any{
+		int(1),
+		uint(1),
+		complex(1, 1),
+		struct{}{},
+		[]int{1},
+	}
 	for _, v := range bad {
 		v := v
 		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
@@ -177,6 +157,15 @@ func TestCanFloat(t *testing.T) {
 		})
 	}
 
+	strings := []any{
+		"42.5",
+		myString("42.5"),
+		[]byte("42.5"),
+		[]rune("42.5"),
+		myBytes("42.5"),
+		myRunes("42.5"),
+		my42Marshaler{},
+	}
 	for _, v := range strings {
 		v := v
 		t.Run(fmt.Sprintf("WithConvertStrings + %T(%v)", v, v), func(t *testing.T) {
@@ -191,10 +180,21 @@ func TestCanFloat(t *testing.T) {
 		})
 	}
 
+	badStrings := []any{
+		[]int{1},
+		"foo",
+		"",
+		new(string),
+		new(myString),
+		my42Marshaler{err: myError},
+		myMarshaler{},
+		myRunes(""),
+		myBytes(""),
+	}
 	for _, v := range badStrings {
 		v := v
 		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
-			if into.CanFloat(v, into.WithConvertStrings(), into.WithMarshalerCheck()) {
+			if into.CanFloat(v, into.WithConvertStrings()) {
 				t.Error("succeeded but should have failed for value:", v)
 			}
 		})

@@ -17,7 +17,7 @@ func (flags) isOption() {}
 const (
 	convertStrings flags = iota
 	skipReflect
-	checkMarshal
+	skipMarshalCheck
 )
 
 type fallbackValue struct{ x any }
@@ -41,8 +41,8 @@ func WithoutReflection() Option {
 	return skipReflect
 }
 
-// WithMarshalerCheck is an option that enables an additional check in [CanString] and similar,
-// which runs [encoding.TextMarshaler]'s marshal or [strconv] conversions to ensure they don't return errors.
-func WithMarshalerCheck() Option {
-	return checkMarshal
+// WithoutMarshalerCheck is an option that skips a check in [CanString] and similar
+// that runs [encoding.TextMarshaler]'s marshal or [strconv] conversions to ensure they don't return errors.
+func WithoutMarshalerCheck() Option {
+	return skipMarshalCheck
 }

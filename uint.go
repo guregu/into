@@ -15,11 +15,11 @@ func CanUint(x any, options ...Option) bool {
 	switch x := x.(type) {
 	case uint, uint64, uint32, uint16, uint8, *uint, *uint64, *uint32, *uint16, *uint8, nil:
 		return true
-	case string, *string, []byte, rune, *rune:
+	case string, *string, []byte, []rune, fmt.Stringer:
 		if !should(options, convertStrings) {
 			return false
 		}
-		if !should(options, checkMarshal) {
+		if should(options, skipMarshalCheck) {
 			return true
 		}
 		str := String(x)
@@ -29,7 +29,7 @@ func CanUint(x any, options ...Option) bool {
 		if !should(options, convertStrings) {
 			return false
 		}
-		if !should(options, checkMarshal) {
+		if should(options, skipMarshalCheck) {
 			return true
 		}
 		text, err := x.MarshalText()
@@ -41,22 +41,39 @@ func CanUint(x any, options ...Option) bool {
 	}
 
 	if !should(options, skipReflect) {
-		rt := reflect.TypeOf(x)
-		for rt.Kind() == reflect.Pointer {
-			rt = rt.Elem()
+		rv := reflect.ValueOf(x)
+		for rv.Kind() == reflect.Pointer {
+			rv = rv.Elem()
 		}
-		switch rt.Kind() {
+		switch rv.Kind() {
 		case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
 			return true
 		case reflect.String:
-			return should(options, convertStrings)
+			if !should(options, convertStrings) {
+				return false
+			}
+			if should(options, skipMarshalCheck) {
+				return true
+			}
+			_, err := strconv.ParseUint(rv.String(), 10, 64)
+			return err == nil
 		case reflect.Slice:
 			if !should(options, convertStrings) {
 				return false
 			}
-			switch rt.Elem().Kind() {
-			case reflect.Uint8, reflect.Int32: // []byte, []rune
-				return true
+			switch rv.Type().Elem().Kind() {
+			case reflect.Uint8: // []byte
+				if should(options, skipMarshalCheck) {
+					return true
+				}
+				_, err := strconv.ParseUint(string(rv.Bytes()), 10, 64)
+				return err == nil
+			case reflect.Int32: // []rune
+				if should(options, skipMarshalCheck) {
+					return true
+				}
+				_, err := strconv.ParseUint(string(rv.Convert(runesType).Interface().([]rune)), 10, 64)
+				return err == nil
 			}
 			return false
 		}

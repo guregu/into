@@ -179,6 +179,14 @@ func TestCanInt(t *testing.T) {
 		new(myInt),
 		nil,
 	}
+	for _, v := range good {
+		v := v
+		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
+			if !into.CanInt(v) {
+				t.Error("failed but should have succeeded for value:", v)
+			}
+		})
+	}
 
 	bad := []any{
 		float64(1),
@@ -189,35 +197,6 @@ func TestCanInt(t *testing.T) {
 		string("42"),
 		[]int64{1},
 	}
-
-	strings := []any{
-		"42",
-		"",
-		new(string),
-		myString("42"),
-		new(myString),
-		[]byte("42"),
-		myBytes("42"),
-		my42Marshaler{},
-		my42Marshaler{err: myError}, // by default, not checked
-	}
-
-	badStrings := []any{
-		[]int{1},
-		"foo",
-		my42Marshaler{err: myError},
-		myMarshaler{},
-	}
-
-	for _, v := range good {
-		v := v
-		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
-			if !into.CanInt(v) {
-				t.Error("failed but should have succeeded for value:", v)
-			}
-		})
-	}
-
 	for _, v := range bad {
 		v := v
 		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
@@ -227,6 +206,15 @@ func TestCanInt(t *testing.T) {
 		})
 	}
 
+	strings := []any{
+		"42",
+		myString("42"),
+		[]byte("42"),
+		[]rune("42"),
+		myBytes("42"),
+		myRunes("42"),
+		my42Marshaler{},
+	}
 	for _, v := range strings {
 		v := v
 		t.Run(fmt.Sprintf("WithConvertStrings + %T(%v)", v, v), func(t *testing.T) {
@@ -241,11 +229,26 @@ func TestCanInt(t *testing.T) {
 		})
 	}
 
+	badStrings := []any{
+		"",
+		new(string),
+		new(myString),
+		"foo",
+		my42Marshaler{err: myError},
+		myMarshaler{},
+		myRunes(""),
+		myBytes(""),
+	}
 	for _, v := range badStrings {
 		v := v
 		t.Run(fmt.Sprintf("strict string %T(%v)", v, v), func(t *testing.T) {
-			if into.CanInt(v, into.WithConvertStrings(), into.WithMarshalerCheck()) {
+			if into.CanInt(v, into.WithConvertStrings()) {
 				t.Error("succeeded but should have failed for value:", v)
+			}
+		})
+		t.Run(fmt.Sprintf("WithoutMarshalerCheck + %T(%v)", v, v), func(t *testing.T) {
+			if !into.CanInt(v, into.WithConvertStrings(), into.WithoutMarshalerCheck()) {
+				t.Error("failed but should have succeeded for value:", v)
 			}
 		})
 	}

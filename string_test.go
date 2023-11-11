@@ -230,7 +230,7 @@ func TestCanString(t *testing.T) {
 	for _, v := range strictlyBad {
 		v := v
 		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
-			if into.CanString(v, into.WithMarshalerCheck()) {
+			if into.CanString(v) {
 				t.Error("succeeded but should have failed for value:", v)
 			}
 		})

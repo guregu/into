@@ -23,7 +23,6 @@ func TestValue(t *testing.T) {
 	t.Parallel()
 
 	t.Run("non-nil", func(t *testing.T) {
-		t.Parallel()
 		want := 42
 		ptr := &want
 		got := into.Value(ptr)
@@ -33,7 +32,6 @@ func TestValue(t *testing.T) {
 	})
 
 	t.Run("nil", func(t *testing.T) {
-		t.Parallel()
 		want := 0
 		var ptr *int
 		got := into.Value(ptr)
@@ -47,7 +45,6 @@ func TestValueOr(t *testing.T) {
 	t.Parallel()
 
 	t.Run("non-nil", func(t *testing.T) {
-		t.Parallel()
 		want := 42
 		ptr := &want
 		got := into.ValueOr(ptr, 1337)
@@ -57,7 +54,6 @@ func TestValueOr(t *testing.T) {
 	})
 
 	t.Run("nil", func(t *testing.T) {
-		t.Parallel()
 		want := 42
 		var ptr *int
 		got := into.ValueOr(ptr, 42)

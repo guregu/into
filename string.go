@@ -15,7 +15,7 @@ func CanString(x any, options ...Option) bool {
 	case string, *string, []byte, rune, *rune, []rune, fmt.Stringer, nil:
 		return true
 	case encoding.TextMarshaler:
-		if !should(options, checkMarshal) {
+		if should(options, skipMarshalCheck) {
 			return true
 		}
 		_, err := x.MarshalText()
@@ -96,12 +96,12 @@ func String(x any, options ...Option) string {
 			return rv.String()
 		case reflect.Slice:
 			switch rv.Type().Elem().Kind() {
-			case reflect.Uint8:
+			case reflect.Uint8: // []byte
 				if rv.IsNil() {
 					goto fallback
 				}
 				return string(rv.Bytes())
-			case reflect.Int32:
+			case reflect.Int32: // []rune
 				if rv.IsNil() {
 					goto fallback
 				}

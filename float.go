@@ -13,11 +13,11 @@ func CanFloat(x any, options ...Option) bool {
 	switch x := x.(type) {
 	case float64, float32, *float64, *float32, nil:
 		return true
-	case string, *string, []byte:
+	case string, *string, []byte, []rune, fmt.Stringer:
 		if !should(options, convertStrings) {
 			return false
 		}
-		if !should(options, checkMarshal) {
+		if should(options, skipMarshalCheck) {
 			return true
 		}
 		str := String(x)
@@ -27,7 +27,7 @@ func CanFloat(x any, options ...Option) bool {
 		if !should(options, convertStrings) {
 			return false
 		}
-		if !should(options, checkMarshal) {
+		if should(options, skipMarshalCheck) {
 			return true
 		}
 		text, err := x.MarshalText()
@@ -39,20 +39,41 @@ func CanFloat(x any, options ...Option) bool {
 	}
 
 	if !should(options, skipReflect) {
-		rt := reflect.TypeOf(x)
-		for rt.Kind() == reflect.Pointer {
-			rt = rt.Elem()
+		rv := reflect.ValueOf(x)
+		for rv.Kind() == reflect.Pointer {
+			rv = rv.Elem()
 		}
-		switch rt.Kind() {
+		switch rv.Kind() {
 		case reflect.Float64, reflect.Float32:
 			return true
 		case reflect.String:
-			return should(options, convertStrings)
+			if !should(options, convertStrings) {
+				return false
+			}
+			if should(options, skipMarshalCheck) {
+				return true
+			}
+			_, err := strconv.ParseFloat(rv.String(), 64)
+			return err == nil
 		case reflect.Slice:
 			if !should(options, convertStrings) {
 				return false
 			}
-			return rt.Elem().Kind() == reflect.Uint8
+			switch rv.Type().Elem().Kind() {
+			case reflect.Uint8: // []byte
+				if should(options, skipMarshalCheck) {
+					return true
+				}
+				_, err := strconv.ParseFloat(string(rv.Bytes()), 64)
+				return err == nil
+			case reflect.Int32: // []rune
+				if should(options, skipMarshalCheck) {
+					return true
+				}
+				_, err := strconv.ParseFloat(string(rv.Convert(runesType).Interface().([]rune)), 64)
+				return err == nil
+			}
+			return false
 		}
 	}
 

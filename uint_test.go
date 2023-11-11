@@ -185,42 +185,22 @@ func TestCanUint(t *testing.T) {
 		new(myUint),
 		nil,
 	}
+	for _, v := range good {
+		v := v
+		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
+			if !into.CanUint(v, into.WithoutMarshalerCheck()) {
+				t.Errorf("failed but should have succeeded for value: %v (type %T)", v, v)
+			}
+		})
+	}
 
 	bad := []any{
 		float64(1),
 		float32(1),
 		complex(1, 1),
 		struct{}{},
-	}
-
-	strings := []any{
-		"42",
-		"",
-		new(string),
-		myString("42"),
-		new(myString),
-		[]byte("42"),
-		myBytes("42"),
-		my42Marshaler{},
-		my42Marshaler{err: myError}, // ignored by default
-	}
-
-	badStrings := []any{
 		[]int{1},
-		"foo",
-		my42Marshaler{err: myError},
-		myMarshaler{},
 	}
-
-	for _, v := range good {
-		v := v
-		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
-			if !into.CanUint(v) {
-				t.Errorf("failed but should have succeeded for value: %v (type %T)", v, v)
-			}
-		})
-	}
-
 	for _, v := range bad {
 		v := v
 		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
@@ -230,6 +210,15 @@ func TestCanUint(t *testing.T) {
 		})
 	}
 
+	strings := []any{
+		"42",
+		myString("42"),
+		[]byte("42"),
+		[]rune("42"),
+		myBytes("42"),
+		myRunes("42"),
+		my42Marshaler{},
+	}
 	for _, v := range strings {
 		v := v
 		t.Run(fmt.Sprintf("WithConvertStrings + %T(%v)", v, v), func(t *testing.T) {
@@ -244,17 +233,31 @@ func TestCanUint(t *testing.T) {
 		})
 	}
 
+	badStrings := []any{
+		"",
+		new(string),
+		new(myString),
+		"foo",
+		my42Marshaler{err: myError},
+		myMarshaler{},
+		myRunes(""),
+		myBytes(""),
+	}
 	for _, v := range badStrings {
 		v := v
-		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
-			if into.CanUint(v, into.WithConvertStrings(), into.WithMarshalerCheck()) {
+		t.Run(fmt.Sprintf("bad string %T(%v)", v, v), func(t *testing.T) {
+			if into.CanUint(v, into.WithConvertStrings()) {
 				t.Error("succeeded but should have failed for value:", v)
+			}
+		})
+		t.Run(fmt.Sprintf("WithoutMarshalerCheck + %T(%v)", v, v), func(t *testing.T) {
+			if !into.CanUint(v, into.WithConvertStrings(), into.WithoutMarshalerCheck()) {
+				t.Error("failed but should have succeeded for value:", v)
 			}
 		})
 	}
 
 	t.Run("WithConvertStrings disabled", func(t *testing.T) {
-		t.Parallel()
 		if into.CanUint("123") {
 			t.Error("unexpected success")
 		}
