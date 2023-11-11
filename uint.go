@@ -55,7 +55,7 @@ func CanUint(x any, options ...Option) bool {
 				return false
 			}
 			switch rt.Elem().Kind() {
-			case reflect.Uint8, reflect.Int32:
+			case reflect.Uint8, reflect.Int32: // []byte, []rune
 				return true
 			}
 			return false
@@ -65,7 +65,7 @@ func CanUint(x any, options ...Option) bool {
 	return false
 }
 
-// Uint coerces x uinto an unsigned integer, supporting the following types:
+// Uint coerces x into an unsigned integer, supporting the following types:
 //   - uint, uint64, uint32, uint16, uint8
 //   - *uint, *uint64, *uint32, *uint16, *uint8
 //   - types with an underlying unsigned integer value or pointers to such types
@@ -86,7 +86,10 @@ func Uint(x any, options ...Option) uint {
 	case uint8:
 		return uint(x)
 	case *uint:
-		return Value(x)
+		if x == nil {
+			goto fallback
+		}
+		return *x
 	case *uint64:
 		if x == nil {
 			goto fallback
